@@ -2,10 +2,10 @@ import pandas as pd
 from datetime import timedelta
 
 
-def diff_in_years(start_date, end_date):
+def diff_in_years(end_date, start_date):
     """
         Calculates difference between dates in years.
-        e.g.  diff_in_years('2020-01-01', '2021-03-01') = 1.16
+        e.g.  diff_in_years('2021-03-01', '2020-01-01') = 1.16
 
     :param start_date: start date
 

@@ -14,7 +14,7 @@ def get_processed_dataframes(investment_relationship_path: str,
     :param company_details_path: path to csv file which
         has company details on your local machine
 
-    :return: investment_relationship, investments, invested_companies_detail
+    :return: investment_relationship, grouped_investments, invested_companies_detail
     """
     # Read investment_relationship table
     investment_relationship = pd.read_csv(investment_relationship_path, dtype=str)
@@ -74,8 +74,8 @@ def get_processed_dataframes(investment_relationship_path: str,
         "short_description"
     ], axis=1, inplace=True)
 
-    # Let's get just the investments in the companies removing the investor information
-    investments = (
+    # Let's get the investments in the companies removing the investor information
+    grouped_investments = (
         investment_relationship
         .drop([
             'crunchbase_company_id',
@@ -87,7 +87,7 @@ def get_processed_dataframes(investment_relationship_path: str,
     )
 
     # Now let's get details of companies which have been invested in
-    invested_companies_detail = company_details[company_details.id.isin(investments.id.unique())]
+    invested_companies_detail = company_details[company_details.id.isin(grouped_investments.id.unique())]
 
     # Find proxy foundation date as the first investment date where foundation dates isn't available
     proxy = investment_relationship.groupby('invested_in_company_id').announced_on.min().reset_index()
@@ -101,4 +101,4 @@ def get_processed_dataframes(investment_relationship_path: str,
     )
     invested_companies_detail.drop('announced_on', axis=1, inplace=True)
 
-    return investment_relationship, investments, invested_companies_detail
+    return investment_relationship, grouped_investments, invested_companies_detail
