@@ -63,29 +63,27 @@ def create_investment_score(investment_relationship: pd.DataFrame,
 
     # Let's define score for each investment found in the investment relationship table
     for index, row in investment_relationship.iterrows():
-        if row.series == 0:
-            # if it is a non-alphabetical series for investment assign the overall
-            # performance score of company to this investment
-            scores.append(
-                company_details[company_details.id == row.invested_in_company_id]
-                ['performance_in_group'].iloc[0]
-            )
+        overall_score_invested_company = (company_details[company_details.id == row.invested_in_company_id]
+        ['performance_in_group'].iloc[0])
+        subdf = grouped_investments[(grouped_investments.id == row.invested_in_company_id)]
+        rank = subdf[subdf.series == row.series].ranks.values()
+        if rank + 1 in subdf.ranks:
+            # factor by which next investment has grown
+            invest_growth_ratio = (subdf[subdf.ranks == rank + 1].money_raised_usd.iloc[0] /
+                                   subdf[subdf.ranks == rank].money_raised_usd.iloc[0])
+
+            # years in which next investment is raised
+            invest_duration_diff = diff_in_years(subdf[subdf.ranks == rank + 1].announced_on.iloc[0],
+                                                 subdf[subdf.ranks == rank].announced_on.iloc[0])
+
+            # average of growth of investment ratio, inverse of duration in which it has been raised
+            # and overall company performance penalised by the rank of round in which it has been seen
+            investment_score = (invest_growth_ratio
+                                + 1 / invest_duration_diff
+                                + overall_score_invested_company / rank) / 3
         else:
-            subdf = grouped_investments[(grouped_investments.id == row.invested_in_company_id)]
-            rank = subdf[subdf.series == row.series].ranks.values()
-            if rank + 1 in subdf.ranks:
-                # factor by which next investment has grown
-                invest_growth_ratio = (subdf[subdf.ranks == rank + 1].money_raised_usd.iloc[0] /
-                                       subdf[subdf.ranks == rank].money_raised_usd.iloc[0])
-
-                # years in which next investment is raised
-                invest_duration_diff = diff_in_years(subdf[subdf.ranks == rank + 1].announced_on.iloc[0],
-                                                     subdf[subdf.ranks == rank].announced_on.iloc[0])
-
-                # average of growth of investment ratio and inverse of duration in which it
-                # has been raised accelerated by the round in which it has been seen
-                investment_score = rank * (invest_growth_ratio + 1 / invest_duration_diff) / 2
-                scores.append(investment_score)
+            investment_score = overall_score_invested_company / rank
+        scores.append(investment_score)
 
     investment_relationship['scores'] = scores
     return investment_relationship
